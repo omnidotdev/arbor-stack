@@ -12,6 +12,6 @@ services:
   - hidra-app:
       repo: https://github.com/omnidotdev/hidra-app#master
   - arbor-api:
-    repo: https://github.com/omnidotdev/arbor-api#master
+      repo: https://github.com/omnidotdev/arbor-api#master
   - arbor-app:
-    repo: https://github.com/omnidotdev/arbor-app#master
+      repo: https://github.com/omnidotdev/arbor-app#master
