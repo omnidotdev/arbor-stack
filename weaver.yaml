@@ -1,0 +1,38 @@
+# Arbor Workspace
+# Git-powered code hosting and collaboration platform
+
+sources:
+  # Platform metarepos - each has its own weaver.yaml
+  - path: ../hidra/weaver.yaml
+    tags: [platform, hidra]
+
+workspace: .
+
+repositories:
+  # Arbor metarepo root
+  arbor:
+    url: git@github.com:omnidotdev/arbor.git
+    path: .
+    tags: [product, metarepo]
+    description: Git-powered code hosting and collaboration platform
+
+  # Arbor product services
+  arbor-api:
+    url: git@github.com:omnidotdev/arbor-api.git
+    path: ./services/arbor-api
+    depends_on: [arbor-git]
+    tags: [product, backend]
+    description: Arbor GraphQL API
+
+  arbor-app:
+    url: git@github.com:omnidotdev/arbor-app.git
+    path: ./services/arbor-app
+    depends_on: [arbor-api]
+    tags: [product, frontend]
+    description: Arbor web application
+
+  arbor-git:
+    url: git@github.com:omnidotdev/arbor-git.git
+    path: ./services/arbor-git
+    tags: [product, backend-service, rust]
+    description: High-performance Git backend service powered by gitoxide
