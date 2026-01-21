@@ -3,8 +3,15 @@
 
 sources:
   # Platform metarepos - each has its own weaver.yaml
+  # Paths from sources are automatically rebased relative to source location
   - path: ../hidra/weaver.yaml
     tags: [platform, hidra]
+
+  - path: ../aether/weaver.yaml
+    tags: [platform, aether]
+
+  - path: ../vortex/weaver.yaml
+    tags: [platform, vortex]
 
 workspace: .
 
