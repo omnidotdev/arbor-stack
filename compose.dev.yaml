@@ -1,0 +1,15 @@
+# Development override - build from source instead of pulling images
+# Usage: docker compose -f compose.yaml -f compose.dev.yaml up
+
+services:
+  arbor-git:
+    build: ./services/arbor-git
+    image: arbor-git:dev
+
+  api:
+    build: ./services/arbor-api
+    image: arbor-api:dev
+
+  app:
+    build: ./services/arbor-app
+    image: arbor-app:dev

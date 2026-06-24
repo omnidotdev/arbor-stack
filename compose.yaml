@@ -1,0 +1,66 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-arbor}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    volumes:
+      - db_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "${DB_PORT:-5432}:5432"
+
+  arbor-git:
+    image: manifold.omni.dev/omnidotdev/arbor-git:latest
+    environment:
+      RUST_LOG: arbor_git=info,tower_http=info
+      GRPC_PORT: "50051"
+      HTTP_PORT: "8080"
+      STORAGE_PATH: /var/lib/arbor-git
+    volumes:
+      - git_data:/var/lib/arbor-git
+    ports:
+      - "${GIT_GRPC_PORT:-50051}:50051"
+      - "${GIT_HTTP_PORT:-8080}:8080"
+
+  api:
+    image: manifold.omni.dev/omnidotdev/arbor-api:latest
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD}@db:5432/${DB_NAME:-arbor}
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
+      PORT: "4000"
+      HOST: "0.0.0.0"
+      NODE_ENV: production
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+      GIT_SERVICE_URL: http://arbor-git:8080
+    volumes:
+      - arbor_repos:/var/lib/arbor
+    depends_on:
+      db:
+        condition: service_healthy
+      arbor-git:
+        condition: service_started
+    ports:
+      - "${API_PORT:-4000}:4000"
+
+  app:
+    image: manifold.omni.dev/omnidotdev/arbor-app:latest
+    environment:
+      NODE_ENV: production
+      VITE_BASE_URL: http://localhost:3000
+      VITE_API_BASE_URL: http://api:4000
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
+    depends_on:
+      - api
+    ports:
+      - "${APP_PORT:-3000}:3000"
+
+volumes:
+  db_data:
+  git_data:
+  arbor_repos:
