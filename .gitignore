@@ -9,3 +9,7 @@
 !weaver.yaml
 !compose.yaml
 !compose.dev.yaml
+
+# migration tooling
+!scripts/
+!scripts/*.ts
