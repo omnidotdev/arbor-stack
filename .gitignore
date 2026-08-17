@@ -9,6 +9,12 @@
 !weaver.yaml
 !compose.yaml
 !compose.dev.yaml
+!.env.local.template
+!renovate.json
+
+# CI workflows
+!.github/
+!.github/**
 
 # migration tooling
 !scripts/

@@ -3,15 +3,33 @@ services:
   # service-name:
   #   repo: repository URL (required)
   #   path: local path (optional, defaults to `services/service-name`; example: ../repo-path)
+  #   metarepo: true if this is a metarepo with a services/ subdirectory
   #   env: array of environment variables to set (optional); example:
   #
   #        env:
   #          - TILT_CUSTOM_REPO_ENV_PATH: ../repo-path/.env.local
   #
   # ----------------------------
-  - gatekeeper-app:
-      repo: https://github.com/omnidotdev/gatekeeper-app#master
+  # Core platform services - loaded as composite repos (metarepos)
+  # ----------------------------
+  - hidra:
+      repo: https://github.com/omnidotdev/hidra-stack#master
+      path: ../hidra-stack
+      metarepo: true
+  - aether:
+      repo: https://github.com/omnidotdev/aether-stack#master
+      path: ../aether-stack
+      metarepo: true
+  - vortex:
+      repo: https://github.com/omnidotdev/vortex-stack#master
+      path: ../vortex-stack
+      metarepo: true
+  # ----------------------------
+  # Product services
+  # ----------------------------
   - arbor-api:
       repo: https://github.com/omnidotdev/arbor-api#master
   - arbor-app:
       repo: https://github.com/omnidotdev/arbor-app#master
+  - arbor-git:
+      repo: https://github.com/omnidotdev/arbor-git#master

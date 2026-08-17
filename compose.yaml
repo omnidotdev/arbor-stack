@@ -24,6 +24,16 @@ services:
       STORAGE_PATH: /var/lib/arbor-git
     volumes:
       - git_data:/var/lib/arbor-git
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:8080/health || wget -qO- http://localhost:8080/health || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     ports:
       - "${GIT_GRPC_PORT:-50051}:50051"
       - "${GIT_HTTP_PORT:-8080}:8080"
@@ -40,11 +50,21 @@ services:
       GIT_SERVICE_URL: http://arbor-git:8080
     volumes:
       - arbor_repos:/var/lib/arbor
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:4000/health || wget -qO- http://localhost:4000/health || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       db:
         condition: service_healthy
       arbor-git:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "${API_PORT:-4000}:4000"
 
@@ -55,8 +75,19 @@ services:
       VITE_BASE_URL: http://localhost:3000
       VITE_API_BASE_URL: http://api:4000
       AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:3000/api/healthz || wget -qO- http://localhost:3000/api/healthz || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     ports:
       - "${APP_PORT:-3000}:3000"
 
