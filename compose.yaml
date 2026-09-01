@@ -47,7 +47,8 @@ services:
       HOST: "0.0.0.0"
       NODE_ENV: production
       CORS_ALLOWED_ORIGINS: http://localhost:3000
-      GIT_SERVICE_URL: http://arbor-git:8080
+      USE_ARBOR_GIT: "true"
+      GIT_SERVICE_URL: arbor-git:50051
     volumes:
       - arbor_repos:/var/lib/arbor
     healthcheck:
