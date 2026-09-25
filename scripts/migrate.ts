@@ -211,16 +211,6 @@ const OBSERVER_QUERY = /* GraphQL */ `
   }
 `;
 
-const USERNAME_QUERY = /* GraphQL */ `
-  query Username($id: UUID!) {
-    users(filter: { rowId: { equalTo: $id } }, first: 1) {
-      nodes {
-        username
-      }
-    }
-  }
-`;
-
 const REPOSITORY_EXISTS_QUERY = /* GraphQL */ `
   query RepositoryExists($slug: String!, $organizationId: UUID) {
     repositories(
@@ -408,19 +398,13 @@ const main = async () => {
     process.exit(1);
   }
 
-  const userData = await graphql(options.api, sessionToken, USERNAME_QUERY, {
-    id: observerRowId,
-  });
-  const arborOwner = (
-    userData.users as { nodes?: { username: string }[] } | undefined
-  )?.nodes?.[0]?.username;
-  if (!arborOwner) {
-    console.error("Could not resolve the current user's Arbor username");
-    process.exit(1);
-  }
-
+  // The schema exposes no `users` root and `Observer` carries no username, so
+  // the clone-URL owner is taken from each created repository's `ownerUsername`
+  // below. That owner is always the creating user's username, even for an
+  // organization repository, because resolveRepositorySummary joins
+  // repository.ownerId to user.username on the git side.
   console.log(
-    `Acting as ${arborOwner}${organizationId ? ` (org ${organizationId})` : ""}\n`,
+    `Acting as observer ${observerRowId}${organizationId ? ` (org ${organizationId})` : ""}\n`,
   );
 
   let failures = 0;
@@ -465,6 +449,10 @@ const main = async () => {
         ((existing.repositories as { nodes?: unknown[] } | undefined)?.nodes
           ?.length ?? 0) > 0;
 
+      // The creating user's username, resolved from the create mutation, is the
+      // owner segment of the clone URL (see the note where the observer resolves)
+      let repoOwner: string | null = null;
+
       if (alreadyExists) {
         console.log(`exists ${label} -> ${slug}`);
       } else if (options.apply) {
@@ -482,9 +470,11 @@ const main = async () => {
           },
         );
         const payload = created.createRepositoryWithGit as {
+          ownerUsername?: string | null;
           error?: string | null;
         } | null;
         if (payload?.error) throw new Error(payload.error);
+        repoOwner = payload?.ownerUsername ?? null;
         console.log(`create ${label} -> ${slug} (${visibility})`);
       } else {
         console.log(`create ${label} -> ${slug} (${visibility}) [dry run]`);
@@ -492,7 +482,12 @@ const main = async () => {
 
       // Mirror push. A bare mirror clone is fetched into a temp dir so the
       // user's working copies are never touched
-      const cloneUrl = arborCloneUrl(options.gitHost, arborOwner, slug);
+      if (options.apply && !repoOwner) {
+        throw new Error(
+          "could not resolve the created repository's owner username",
+        );
+      }
+      const cloneUrl = arborCloneUrl(options.gitHost, repoOwner ?? "unknown", slug);
 
       if (options.apply) {
         const workdir = `/tmp/arbor-migrate/${spec.owner}-${slug}.git`;
