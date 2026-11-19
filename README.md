@@ -95,6 +95,59 @@ docker compose logs -f api
 
 Full documentation lives at [docs.omni.dev/arbor](https://docs.omni.dev/arbor).
 
+## Authenticating git (CI and agents)
+
+Arbor serves git over HTTPS at `git.arbor.omni.dev`. There is no SSH endpoint,
+so every clone, fetch, and push authenticates over HTTPS with a personal access
+token (PAT). The Omni SSO account password is not a git credential and will not
+authenticate a git operation; a PAT is required.
+
+### Create a token
+
+Create a PAT in the web app under [Settings -> Tokens](https://arbor.omni.dev/settings/tokens).
+A token may be:
+
+- **read** or **write** (a read token can clone and fetch but never push)
+- **non-expiring** or limited to a lifetime in days
+- **unconfined** (reaches every repository its owner can reach) or **confined**
+  to named repositories, optionally down to specific ref and path globs (e.g.
+  `refs/heads/agent/*`, `src/**`) for an agent that should only touch its own
+  branches
+
+The plaintext token is shown once at creation and never again; store it in the
+caller's secret store immediately.
+
+### Use the token with git
+
+Git sends the token as the HTTP Basic password; the username is ignored, so any
+placeholder works:
+
+```sh
+# clone
+git clone https://arbor@git.arbor.omni.dev/<owner>/<repo>.git
+
+# or inject the token directly (useful in CI, where no prompt is available)
+git clone https://x:${ARBOR_PAT}@git.arbor.omni.dev/<owner>/<repo>.git
+```
+
+For an existing checkout, add Arbor as a remote and push to it:
+
+```sh
+git remote add arbor https://git.arbor.omni.dev/<owner>/<repo>.git
+git push arbor master
+```
+
+### CI and agents
+
+- **CI**: store the PAT as a masked secret and pass it as the Basic password, as
+  in the `https://x:${ARBOR_PAT}@...` form above. A read-only token is enough for
+  a pipeline that only needs to clone sources.
+- **Agents**: the same PAT authenticates Arbor's first-party MCP server at
+  `https://api.arbor.omni.dev/mcp` as a bearer token, so an agent drives
+  repositories, pull requests, and checks through a supported surface rather
+  than by scraping. See the [arbor-api README](services/arbor-api/README.md) for
+  the MCP tool surface.
+
 ## License
 
 The code in this repository is licensed under Apache 2.0, &copy; [Omni LLC](https://omni.dev). See [LICENSE.md](LICENSE.md) for more information.
